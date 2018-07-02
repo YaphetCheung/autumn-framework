@@ -2,6 +2,8 @@ package priv.autumn4j.framework;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import priv.autumn4j.framework.annotation.AutumnRequestBody;
+import priv.autumn4j.framework.annotation.AutumnRequestParameter;
 import priv.autumn4j.framework.bean.RequestHandler;
 import priv.autumn4j.framework.bean.RequestParam;
 import priv.autumn4j.framework.bean.ResponseData;
@@ -63,7 +65,7 @@ public class DispatcherServlet extends HttpServlet {
             }
             //请求body
             String body = CodecUtil.decodeURL(StreamUtil.getString(req.getInputStream()));
-
+            Map<String, Object> bodyMap = new HashMap<>();
             if (StringUtils.isNotEmpty(body)) {
                 String[] params = StringUtils.split(body, "&");
                 if (ArrayUtils.isNotEmpty(params)) {
@@ -72,7 +74,7 @@ public class DispatcherServlet extends HttpServlet {
                         if (ArrayUtils.isNotEmpty(kvPair) && ArrayUtils.getLength(kvPair) == 2) {
                             String paramKey = kvPair[0];
                             String paramValue = kvPair[1];
-                            paramMap.put(paramKey, paramValue);
+                            bodyMap.put(paramKey, paramValue);
                         }
                     }
                 }
@@ -83,9 +85,15 @@ public class DispatcherServlet extends HttpServlet {
             ArrayList<Object> actionParaValues = new ArrayList<>();
             if (ArrayUtils.isNotEmpty(actionParams)) {
                 for (Parameter parameter : actionParams) {
-                    String paramKey = parameter.getName();
-                    if (paramMap.containsKey(paramKey)) {
-                        actionParaValues.add(paramMap.get(paramKey));
+                    if (parameter.isAnnotationPresent(AutumnRequestParameter.class)) {
+                        AutumnRequestParameter autumnRequestParameter = parameter.getAnnotation(AutumnRequestParameter.class);
+                        if (paramMap.containsKey(autumnRequestParameter.value())) {
+                            actionParaValues.add(paramMap.get(autumnRequestParameter.value()));
+                        }
+
+                    } else if (parameter.isAnnotationPresent(AutumnRequestBody.class)) {
+                        //todo
+
                     }
                 }
             }
